@@ -14,6 +14,11 @@ This repository contains homework assignments and practical projects for a DevOp
   - Automated Bash script for installing Docker, Docker Compose, Python, and Django
   - Features error handling, version checking, and colored output
   - Compatible with Ubuntu/Debian systems
+- [**Lesson 4: Docker Containerization**](https://github.com/LesiaUKR/my-microservice-project/tree/lesson-) - Django + PostgreSQL + Nginx
+- Multi-container Docker application with Django web framework
+PostgreSQL database integration with persistent data volumes
+Nginx reverse proxy for production-ready deployment
+Docker Compose orchestration for seamless service management  
 
 ## Repository Structure
 
@@ -21,7 +26,7 @@ This repository contains homework assignments and practical projects for a DevOp
 my-microservice-project/
 ├── main branch          # Project overview and navigation
 ├── lesson-3 branch      # Linux Administration & DevOps Tools
-└── lesson-4 branches    # Future assignments
+└── lesson-4 branch      # Docker Containerization
 ```
 
 ## Getting Started
