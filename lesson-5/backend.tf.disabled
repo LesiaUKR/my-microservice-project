@@ -1,0 +1,12 @@
+# Backend configuration for Terraform state
+# Note: This should be configured after the S3 bucket and DynamoDB table are created
+terraform {
+  backend "s3" {
+    # These values will be provided during terraform init
+    # bucket         = "your-terraform-state-bucket"
+    # key            = "lesson-5/terraform.tfstate"
+    # region         = "us-west-2"
+    # dynamodb_table = "terraform-locks"
+    # encrypt        = true
+  }
+}
