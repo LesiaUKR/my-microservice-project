@@ -31,7 +31,8 @@ This repository contains homework assignments and practical projects for a DevOp
 my-microservice-project/
 ├── main branch          # Project overview and navigation
 ├── lesson-3 branch      # Linux Administration & DevOps Tools
-└── lesson-4 branch      # Docker Containerization
+├── lesson-4 branch      # Docker Containerization
+└── lesson-5 branch      # Terraform Infrastructure as Code
 ```
 
 ## Getting Started
