@@ -15,10 +15,15 @@ This repository contains homework assignments and practical projects for a DevOp
   - Features error handling, version checking, and colored output
   - Compatible with Ubuntu/Debian systems
 - [**Lesson 4: Docker Containerization**](https://github.com/LesiaUKR/my-microservice-project/tree/lesson-4) - Django + PostgreSQL + Nginx
-- Multi-container Docker application with Django web framework
-PostgreSQL database integration with persistent data volumes
-Nginx reverse proxy for production-ready deployment
-Docker Compose orchestration for seamless service management  
+  - Multi-container Docker application with Django web framework
+  - PostgreSQL database integration with persistent data volumes
+  - Nginx reverse proxy for production-ready deployment
+  - Docker Compose orchestration for seamless service management
+- [**Lesson 5: Terraform Infrastructure as Code**](https://github.com/LesiaUKR/my-microservice-project/tree/lesson-5) - AWS Infrastructure with Terraform
+  - S3 backend for remote state storage with versioning and encryption
+  - DynamoDB table for state locking and team collaboration
+  - VPC with multi-AZ architecture, public/private subnets, NAT Gateways
+  - ECR repository for container image storage with security scanning
 
 ## Repository Structure
 
