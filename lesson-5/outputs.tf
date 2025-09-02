@@ -35,3 +35,24 @@ output "ecr_repository_name" {
   description = "Name of the ECR repository"
   value       = module.ecr.ecr_repository_name
 }
+
+# EKS Outputs
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "Endpoint for EKS control plane"
+  value       = module.eks.cluster_endpoint
+}
+
+output "eks_cluster_version" {
+  description = "The Kubernetes server version for the EKS cluster"
+  value       = module.eks.cluster_version
+}
+
+output "eks_cluster_arn" {
+  description = "The Amazon Resource Name (ARN) of the cluster"
+  value       = module.eks.cluster_arn
+}

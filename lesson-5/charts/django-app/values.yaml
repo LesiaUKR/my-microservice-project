@@ -1,0 +1,52 @@
+# Default values for django-app
+replicaCount: 2
+
+image:
+  repository: 065915236794.dkr.ecr.us-west-2.amazonaws.com/lesson-5-ecr
+  tag: "latest"
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+# Environment variables from lesson-4 Docker setup
+config:
+  DEBUG: "False"
+  SECRET_KEY: "django-production-key-change-this"
+  POSTGRES_DB: "myproject"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+
+# Horizontal Pod Autoscaler settings
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Node selector, tolerations and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod security context
+podSecurityContext: {}
+
+# Security context
+securityContext: {}
