@@ -37,7 +37,7 @@ spec:
                 name: {{ include "django-app.fullname" . }}-config
           livenessProbe:
             httpGet:
-              path: /health/
+              path: /
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
