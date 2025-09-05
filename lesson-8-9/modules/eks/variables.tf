@@ -54,3 +54,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "ebs_csi_driver_version" {
+  description = "Version of the EBS CSI driver addon"
+  type        = string
+  default     = null
+}

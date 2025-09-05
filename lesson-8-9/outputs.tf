@@ -56,3 +56,15 @@ output "eks_cluster_arn" {
   description = "The Amazon Resource Name (ARN) of the cluster"
   value       = module.eks.cluster_arn
 }
+
+# Argo CD Outputs
+output "argocd_server_url" {
+  description = "URL to access Argo CD server"
+  value       = module.argocd.argocd_server_url
+}
+
+output "argocd_admin_password" {
+  description = "Argo CD admin password"
+  value       = module.argocd.argocd_admin_password
+  sensitive   = true
+}

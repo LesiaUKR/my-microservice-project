@@ -1,0 +1,48 @@
+# Спрощений Jenkins Configuration
+controller:
+  image: "jenkins/jenkins"
+  tag: "2.426.1-lts"
+  
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  
+  javaOpts: "-Xmx1g -Djenkins.install.runSetupWizard=false"
+  
+  serviceType: "LoadBalancer"
+  servicePort: 8080
+  
+  admin:
+    username: "admin"
+    password: "admin123"
+
+  # Базові плагіни
+  installPlugins:
+    - kubernetes:4029.v5712230ccb_f8
+    - workflow-aggregator:596.v8c21c963d92d
+    - git:5.0.0
+    - configuration-as-code:1625.v27444588cc3d
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: "gp2"
+  size: "8Gi"
+
+# Service Account
+serviceAccount:
+  create: false
+  name: "jenkins-sa"
+
+# RBAC
+rbac:
+  create: true
+  readSecrets: true
+
+# Agent відключений для початку
+agent:
+  enabled: false

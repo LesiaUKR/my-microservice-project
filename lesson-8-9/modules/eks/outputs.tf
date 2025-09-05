@@ -37,3 +37,18 @@ output "cluster_certificate_authority_data" {
   description = "Base64 encoded certificate data required to communicate with the cluster"
   value       = aws_eks_cluster.main.certificate_authority[0].data
 }
+
+output "ebs_csi_driver_role_arn" {
+  description = "ARN of the EBS CSI driver IAM role"
+  value       = aws_iam_role.ebs_csi_driver_role.arn
+}
+
+output "oidc_issuer_url" {
+  description = "The URL on the EKS cluster OIDC Issuer"
+  value       = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+output "oidc_provider_arn" {
+  description = "The ARN of the OIDC Provider"
+  value       = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
