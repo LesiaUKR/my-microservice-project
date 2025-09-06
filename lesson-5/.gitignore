@@ -236,3 +236,15 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate*
+**/terraform.tfvars
+**/.terraform.tfstate.backup
+
+# Lesson directories (exclude from other branches)
+lesson-*/
+!lesson-*/README.md
+!lesson-*/charts/
