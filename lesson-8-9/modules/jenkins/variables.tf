@@ -1,15 +1,10 @@
 variable "cluster_name" {
-  description = "Name of the EKS cluster"
+  description = "EKS cluster name"
   type        = string
 }
 
 variable "cluster_endpoint" {
-  description = "Endpoint for EKS control plane"
-  type        = string
-}
-
-variable "cluster_certificate_authority_data" {
-  description = "Base64 encoded certificate data required to communicate with the cluster"
+  description = "EKS cluster endpoint"
   type        = string
 }
 
@@ -19,39 +14,44 @@ variable "namespace" {
   default     = "jenkins"
 }
 
-variable "chart_version" {
-  description = "Jenkins Helm chart version"
-  type        = string
-  default     = "4.12.1"
-}
-
-variable "storage_class" {
-  description = "Storage class for Jenkins persistent volume"
-  type        = string
-  default     = "gp2"
-}
-
-variable "storage_size" {
-  description = "Size of Jenkins persistent volume"
-  type        = string
-  default     = "20Gi"
-}
-
-variable "admin_user" {
+variable "jenkins_admin_user" {
   description = "Jenkins admin username"
   type        = string
   default     = "admin"
 }
 
-variable "admin_password" {
+variable "jenkins_admin_password" {
   description = "Jenkins admin password"
   type        = string
-  sensitive   = true
   default     = "admin123"
 }
 
-variable "environment" {
-  description = "Environment name"
+variable "storage_class" {
+  description = "Storage class for Jenkins PVC"
   type        = string
-  default     = "dev"
+  default     = "gp2"
+}
+
+variable "storage_size" {
+  description = "Storage size for Jenkins PVC"
+  type        = string
+  default     = "50Gi"
+}
+
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID for ECR access"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key for ECR access"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-west-2"
 }

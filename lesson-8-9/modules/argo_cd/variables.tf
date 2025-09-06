@@ -43,3 +43,22 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+# Нові змінні для Argo CD Applications
+variable "git_repo_url" {
+  description = "Git repository URL for Django application"
+  type        = string
+  default     = "https://github.com/yana-shapka/my-microservice-project.git"
+}
+
+variable "target_revision" {
+  description = "Git branch/tag to track"
+  type        = string
+  default     = "main"
+}
+
+variable "django_app_namespace" {
+  description = "Kubernetes namespace for Django application"
+  type        = string
+  default     = "django-app"
+}

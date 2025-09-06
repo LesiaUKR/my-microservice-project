@@ -17,13 +17,31 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Variables for main.tf
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-west-2"
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
 }
 
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
+  }
+}
+
+# Variables for main.tf
 variable "environment" {
   description = "Environment name"
   type        = string
@@ -78,17 +96,26 @@ module "eks" {
   environment     = var.environment
 }
 
-# Jenkins Module (без depends_on)
-# module "jenkins" {
-#   source = "./modules/jenkins"
-#   
-#   cluster_name                       = module.eks.cluster_name
-#   cluster_endpoint                   = module.eks.cluster_endpoint
-#   cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
-#   
-#   namespace    = "jenkins"
-#   environment  = var.environment
-# }
+# Jenkins Module
+module "jenkins" {
+  source = "./modules/jenkins"
+  
+  cluster_name     = module.eks.cluster_name
+  cluster_endpoint = module.eks.cluster_endpoint
+  namespace        = "jenkins"
+  
+  jenkins_admin_user     = "admin"
+  jenkins_admin_password = "your-secure-password-123"
+  
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+  aws_region           = var.aws_region
+  
+  storage_class = "gp2"
+  storage_size  = "50Gi"
+  
+  depends_on = [module.eks]
+}
 
 # Argo CD Module
 module "argocd" {
@@ -98,6 +125,15 @@ module "argocd" {
   cluster_endpoint                   = module.eks.cluster_endpoint
   cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
   
-  namespace    = "argocd"
-  environment  = var.environment
+  namespace           = "argocd"
+  admin_password      = "argocd-admin-123"
+  server_service_type = "LoadBalancer"
+  environment         = var.environment
+  
+  # Git repository settings
+  git_repo_url           = "https://github.com/LesiaUKR/my-microservice-project.git"
+  target_revision        = "lesson-7"
+  django_app_namespace   = "django-app"
+  
+  depends_on = [module.eks]
 }

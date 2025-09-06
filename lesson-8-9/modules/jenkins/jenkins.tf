@@ -1,8 +1,25 @@
-# Створення namespace для Jenkins
+# Kubernetes 
 resource "kubernetes_namespace" "jenkins" {
   metadata {
     name = var.namespace
   }
+}
+
+# AWS credentials secret
+resource "kubernetes_secret" "aws_credentials" {
+  metadata {
+    name      = "aws-credentials"
+    namespace = var.namespace
+  }
+
+  data = {
+    aws-access-key-id     = var.aws_access_key_id
+    aws-secret-access-key = var.aws_secret_access_key
+    region                = var.aws_region
+  }
+
+  type       = "Opaque"
+  depends_on = [kubernetes_namespace.jenkins]
 }
 
 # Jenkins Helm Release
@@ -10,8 +27,11 @@ resource "helm_release" "jenkins" {
   name       = "jenkins"
   repository = "https://charts.jenkins.io"
   chart      = "jenkins"
-  version    = var.chart_version
+  version    = "4.8.3"
   namespace  = kubernetes_namespace.jenkins.metadata[0].name
+
+  timeout = 1200  
+  wait    = true  
 
   values = [
     file("${path.module}/values.yaml")
@@ -19,12 +39,12 @@ resource "helm_release" "jenkins" {
 
   set {
     name  = "controller.admin.username"
-    value = var.admin_user
+    value = var.jenkins_admin_user
   }
 
-  set_sensitive {
+  set {
     name  = "controller.admin.password"
-    value = var.admin_password
+    value = var.jenkins_admin_password
   }
 
   set {
@@ -37,52 +57,31 @@ resource "helm_release" "jenkins" {
     value = var.storage_size
   }
 
-  depends_on = [kubernetes_namespace.jenkins]
-
-  timeout = 600
+  depends_on = [kubernetes_namespace.jenkins, kubernetes_secret.aws_credentials]
 }
 
-# Service Account для Jenkins з правами
+# Service Account для Jenkins з правами до EKS
 resource "kubernetes_service_account" "jenkins" {
   metadata {
-    name      = "jenkins-sa"
+    name      = "jenkins-admin"
     namespace = var.namespace
   }
-
+  
   depends_on = [kubernetes_namespace.jenkins]
-}
-
-# ClusterRole для Jenkins
-resource "kubernetes_cluster_role" "jenkins" {
-  metadata {
-    name = "jenkins-cluster-role"
-  }
-
-  rule {
-    api_groups = [""]
-    resources  = ["pods", "pods/exec", "pods/log", "persistentvolumeclaims"]
-    verbs      = ["*"]
-  }
-
-  rule {
-    api_groups = ["apps"]
-    resources  = ["deployments", "replicasets"]
-    verbs      = ["*"]
-  }
 }
 
 # ClusterRoleBinding для Jenkins
 resource "kubernetes_cluster_role_binding" "jenkins" {
   metadata {
-    name = "jenkins-cluster-role-binding"
+    name = "jenkins-admin"
   }
-
+  
   role_ref {
     api_group = "rbac.authorization.k8s.io"
     kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.jenkins.metadata[0].name
+    name      = "cluster-admin"
   }
-
+  
   subject {
     kind      = "ServiceAccount"
     name      = kubernetes_service_account.jenkins.metadata[0].name
