@@ -8,7 +8,7 @@ metadata:
   labels:
     app: jenkins-kaniko
 spec:
-  serviceAccountName: jenkins-sa
+  serviceAccountName: jenkins
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:v1.16.0-debug
