@@ -1,192 +1,193 @@
 
-# Django CI/CD with Jenkins + Terraform + Helm + Argo CD
+# RDS Terraform Module
 
-This repository implements a full GitOps-driven CI/CD for a Django application on AWS EKS using **Jenkins**, **Kaniko**, **Amazon ECR**, **Helm**, **Argo CD**, and **Terraform**.
+Universal Terraform module for creating Amazon RDS databases. Supports both standard RDS instances and Aurora clusters through a single `use_aurora` flag.
 
 ## Navigation
 
 [Back to Main Project](https://github.com/LesiaUKR/my-microservice-project/tree/main) - Main project overview and navigation to all lessons
 
-## Tech stack
-Terraform · AWS (EKS, ECR, ELB) · Kubernetes · Helm · Argo CD · Jenkins (Kubernetes agents + Kaniko) · PostgreSQL
+## Features
 
----
+- **Universal Design**: Switch between RDS and Aurora with one variable
+- **Security**: Automatic Security Group and DB Subnet Group creation
+- **Monitoring**: Enhanced Monitoring and Performance Insights enabled
+- **Customizable**: Configurable parameters, backup policies, and scaling
+- **Production Ready**: Encryption, monitoring, and proper IAM roles
 
-## Architecture & Flow
+## Quick Start
 
-1. **Developer pushes code** to GitHub.
-2. **Jenkins** (Pipeline from SCM) spins up a **Kubernetes agent** with containers `kaniko` and `git`.
-3. Jenkins **builds and pushes** the Docker image to **Amazon ECR** (tags: `v1.0.<BUILD_NUMBER>` and `latest`).
-4. Jenkins **updates the Helm chart** `values.yaml` (image tag) in the **chart branch** and pushes the commit to GitHub.
-5. **Argo CD** watches the chart branch and **auto‑syncs** the cluster.
-6. **Kubernetes** rolls out a new Deployment; Service of type **LoadBalancer** exposes the app.
+### Standard RDS Instance
 
----
+```hcl
+module "rds" {
+  source = "./modules/rds"
 
-## Repository & Branch Layout
+  name       = "my-app-db"
+  use_aurora = false
 
-> The project uses separate branches for app code, chart, and infra/pipeline.
+  db_name  = "myapp"
+  username = "postgres"
+  password = "secure-password-123"
 
-* **`lesson-4/`** — Django app code and Dockerfile
+  vpc_id             = "vpc-12345678"
+  subnet_private_ids = ["subnet-12345678", "subnet-87654321"]
 
-  * `django-docker-project/`
-
-    * `Dockerfile`, `docker-entrypoint.sh`, `requirements.txt`, `django_app/`, `nginx/`, etc.
-* **`lesson-7/`** — Helm chart tracked by Argo CD
-
-  * **Chart path**: `lesson-5/charts/django-app/`
-
-    * `templates/` (`deployment.yaml`, `service.yaml`, etc.)
-    * `values.yaml` (holds `image.repository` and `image.tag`)
-* **`lesson-8-9/`** — IaC + pipeline
-
-  * `modules/` (S3+DynamoDB backend, VPC, ECR, EKS, Jenkins, Argo CD)
-  * **`Jenkinsfile`** (the pipeline you run)
-
-**Image repository**: `065915236794.dkr.ecr.us-west-2.amazonaws.com/lesson-9-django-ecr`
-
-**Namespaces**: `jenkins`, `django-app`
-
----
-
-## Prerequisites
-
-* AWS account & CLI configured (`us-west-2` region)
-* Terraform ≥ 1.5, kubectl, Helm
-* GitHub Personal Access Token (PAT) with `repo` scope
-* Docker (optional for local test builds)
-
----
-
-## Provisioning with Terraform
-
-From the infra root:
-
-```bash
-cd lesson-8-9
-terraform init
-terraform apply -auto-approve
+  tags = {
+    Environment = "production"
+    Project     = "my-app"
+  }
+}
 ```
 
-Expected outcomes:
+### Aurora Cluster
 
-* EKS cluster with `django-app` namespace and PostgreSQL
-* ECR repo `lesson-9-django-ecr`
-* Jenkins (namespace `jenkins`) reachable via ELB
-* Argo CD reachable via ELB; an `Application` pointing to the chart branch/path
+```hcl
+module "rds_aurora" {
+  source = "./modules/rds"
 
-> If Terraform outputs the Jenkins/Argo endpoints and passwords, keep them for the next steps.
+  name       = "my-app-aurora"
+  use_aurora = true
 
----
+  db_name  = "myapp"
+  username = "postgres"
+  password = "secure-password-123"
 
-## Jenkins Setup
+  aurora_replica_count = 2
+  instance_class       = "db.r6g.large"
 
-1. **Credentials** → Global:
+  vpc_id             = "vpc-12345678"
+  subnet_private_ids = ["subnet-12345678", "subnet-87654321"]
 
-   * `aws-creds` — *AWS Credentials* (Access key + Secret key)
-   * `github-token` — *Username with password* (GitHub login + PAT)
-2. **Pipeline job**:
-
-   * *Definition*: Pipeline script from SCM
-   * *Repository*: `https://github.com/LesiaUKR/my-microservice-project.git`
-   * *Branch*: `lesson-8-9`
-   * *Script Path*: `lesson-8-9/Jenkinsfile`
-   * **Disable** *Lightweight checkout*
-
-### Jenkinsfile (high‑level)
-
-* Checks out app code from **`lesson-4`** into `app-src/`
-* Builds and pushes image to ECR via **Kaniko**, binding `aws-creds` to env vars
-* Updates `values.yaml` in **`lesson-7/lesson-5/charts/django-app`** with the new tag
-* Commits and pushes back to GitHub
-
-Tags pushed to ECR: `v1.0.<BUILD_NUMBER>` and `latest`.
-
----
-
-## Argo CD
-
-* Watches **branch** `lesson-7`, **path** `lesson-5/charts/django-app`
-* Auto‑sync enabled (recommended). Manual **SYNC** works too.
-* After Jenkins pushes a new tag commit to `lesson-7`, Argo CD reconciles and rolls out the Deployment.
-
----
-
-## How to Run the Pipeline
-
-1. Open Jenkins → job → **Build Now**
-2. Watch stages in Blue Ocean: *Checkout app code* → *Build & Push Docker Image* → *Update Chart Tag in Git*
-3. Confirm new image in ECR and rollout in the cluster (see verification below).
-
----
-
-## Verification
-
-### Kubernetes
-
-```bash
-# pods and services
-kubectl get pods -n django-app
-kubectl get svc -n django-app
-
-# image currently used by the deployment
-kubectl get deploy django-app -n django-app \
-  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-
-# rollout status
-kubectl rollout status deploy django-app -n django-app
+  tags = {
+    Environment = "production"
+    Project     = "my-app"
+  }
+}
 ```
 
-### External URL
+## Key Variables
 
-```text
-http://<your-elb-dns-name>
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `use_aurora` | bool | Create Aurora cluster instead of RDS | `false` |
+| `name` | string | Database identifier | Required |
+| `db_name` | string | Database name | Required |
+| `username` | string | Master username | `postgres` |
+| `password` | string | Master password | Required |
+| `vpc_id` | string | VPC ID | Required |
+| `subnet_private_ids` | list(string) | Private subnet IDs | Required |
+| `instance_class` | string | Instance class | `db.t3.micro` |
+| `engine` | string | Database engine (RDS) | `postgres` |
+| `engine_cluster` | string | Database engine (Aurora) | `aurora-postgresql` |
+| `multi_az` | bool | Multi-AZ deployment (RDS only) | `false` |
+| `aurora_replica_count` | number | Aurora read replicas | `1` |
+| `backup_retention_period` | number | Backup retention days | `7` |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `rds_endpoint` | Database connection endpoint |
+| `rds_port` | Database port |
+| `database_name` | Database name |
+| `security_group_id` | Security group ID |
+| `connection_string` | Connection string template |
+
+## Security
+
+The module creates:
+- **Security Group**: Allows access only from specified CIDR blocks
+- **DB Subnet Group**: Uses private subnets for database placement
+- **Encryption**: Storage encryption enabled by default
+- **IAM Roles**: Proper monitoring roles with least privilege
+
+## Configuration Examples
+
+### Changing Database Engine
+
+**PostgreSQL to MySQL:**
+```hcl
+# For standard RDS
+engine         = "mysql"
+engine_version = "8.0"
+parameter_group_family_rds = "mysql8.0"
+
+# For Aurora
+engine_cluster         = "aurora-mysql"
+engine_version_cluster = "8.0.mysql_aurora.3.04.0"
+parameter_group_family_aurora = "aurora-mysql8.0"
 ```
 
-You should see the JSON message from the Django app (e.g., *Successfully deployed Django application with Docker!*).
+### Instance Class Selection
 
-### Amazon ECR
+**Development (Low Cost):**
+- `db.t3.micro` - 1 vCPU, 1 GB RAM
+- `db.t3.small` - 1 vCPU, 2 GB RAM
 
-```bash
-aws ecr describe-images \
-  --repository-name lesson-9-django-ecr \
-  --region us-west-2 \
-  --query 'reverse(sort_by(imageDetails,&imagePushedAt))[:5].[imageTags,imagePushedAt]' \
-  --output table
+**Production (High Performance):**
+- `db.r6g.large` - 2 vCPU, 16 GB RAM
+- `db.r6g.xlarge` - 4 vCPU, 32 GB RAM
+- `db.r6g.2xlarge` - 8 vCPU, 64 GB RAM
+
+**Example:**
+```hcl
+# Development
+instance_class = "db.t3.micro"
+
+# Production
+instance_class = "db.r6g.large"
 ```
 
-Expect to see `v1.0.<BUILD_NUMBER>` and `latest` among the tags.
+### Storage Configuration
 
-### Argo CD
+```hcl
+# Small application
+allocated_storage = 20
 
-* Application should be **Healthy** and **Synced**.
-* History should show a fresh sync after the Jenkins commit.
+# Medium application  
+allocated_storage = 100
 
----
-
-## Clean‑up
-
-To avoid cloud charges when done:
-
-```bash
-cd lesson-8-9
-terraform destroy -auto-approve
+# Large application
+allocated_storage = 500
 ```
 
-> If you also created the S3/DynamoDB backend via Terraform, destroy that module too, but only **after** the main stack is gone.
+### High Availability Setup
 
----
+```hcl
+# Production RDS with Multi-AZ
+use_aurora = false
+multi_az   = true
+instance_class = "db.r6g.large"
+backup_retention_period = 30
 
-## Troubleshooting
+# Production Aurora with replicas
+use_aurora = true
+aurora_replica_count = 3
+instance_class = "db.r6g.large"
+backup_retention_period = 30
+```
 
-* **ImagePullBackOff / ErrImagePull**: make sure ECR has an image tag used by the chart (`values.yaml`).
-* **CrashLoopBackOff**: check Django env vars, DB connectivity, and container command.
-* **Kaniko cannot push** (`no basic auth credentials`): ensure `aws-creds` is set and bound in the Jenkinsfile; region is `us-west-2`.
-* **Argo OutOfSync**: press **SYNC** or verify the Application points to branch `lesson-7` and the correct chart path.
-* **Kubernetes agent pod fails**: `serviceAccountName` must exist in `jenkins` namespace (e.g., `jenkins` or `default`).
+## Switching Between RDS and Aurora
 
----
+Change the database type by modifying the `use_aurora` variable:
 
-## CI/CD in one picture (text)
+```hcl
+# Standard RDS
+use_aurora = false
 
-`Jenkins (lesson-8-9/Jenkinsfile)` → **builds** app from `lesson-4` → **pushes** to `ECR` → **updates** Helm chart in `lesson-7` → `Argo CD` **syncs** → `EKS` **rolls out** → **ELB** serves Django.
+# Aurora Cluster  
+use_aurora = true
+```
+
+When switching, Terraform will destroy the old database and create a new one. Ensure you have backups before switching in production.
+
+## Requirements
+
+- Terraform >= 1.0
+- AWS Provider >= 5.0
+- Existing VPC with private subnets
+
+## License
+
+This module is open source and available under the MIT License.

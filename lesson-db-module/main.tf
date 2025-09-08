@@ -137,3 +137,69 @@ module "argocd" {
   
   depends_on = [module.eks]
 }
+
+# RDS Database Module
+module "rds" {
+  source = "./modules/rds"
+
+  # Basic configuration
+  name        = "django-app-db"
+  use_aurora  = false  # Змініть на true для Aurora
+  environment = var.environment
+
+  # Database configuration
+  db_name  = "django_app"
+  username = "postgres"
+  password = var.db_password  # Додайте цю змінну
+
+  # Engine configuration (для стандартної RDS)
+  engine         = "postgres"
+  engine_version = "15.7"
+  
+  # Engine configuration (для Aurora - використовується якщо use_aurora = true)
+  engine_cluster         = "aurora-postgresql"
+  engine_version_cluster = "15.4"
+
+  # Instance configuration
+  instance_class    = "db.t3.micro"  # Для продакшену використовуйте більший клас
+  allocated_storage = 20
+
+  # Network configuration
+  vpc_id              = module.vpc.vpc_id
+  subnet_private_ids  = module.vpc.private_subnet_ids
+  subnet_public_ids   = module.vpc.public_subnet_ids
+  publicly_accessible = false
+  
+  # Security
+  allowed_cidr_blocks = [module.vpc.vpc_cidr_block]
+   # eks_security_group_ids = [module.eks.cluster_security_group_id]
+
+  # High availability
+  multi_az                = false  # true для продакшену
+  backup_retention_period = 7
+  aurora_replica_count    = 1      # Тільки для Aurora
+
+  # Database parameters
+  parameters = {
+    "max_connections"              = "100"
+    "shared_preload_libraries"     = "pg_stat_statements"
+    "log_statement"                = "all"
+    "log_min_duration_statement"   = "1000"
+    "work_mem"                     = "4096"
+  }
+
+  # Parameter group families
+  parameter_group_family_rds    = "postgres15"
+  parameter_group_family_aurora = "aurora-postgresql15"
+
+  # Tags
+  tags = {
+    Name        = "django-app-database"
+    Environment = var.environment
+    Project     = "django-microservice"
+    ManagedBy   = "terraform"
+  }
+
+  depends_on = [module.vpc]
+}
+
