@@ -1,0 +1,109 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: jenkins-kaniko
+spec:
+  serviceAccountName: jenkins
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:v1.16.0-debug
+      imagePullPolicy: Always
+      command: ["sleep"]
+      args: ["99d"]
+    - name: git
+      image: alpine/git
+      command: ["cat"]
+      tty: true
+"""
+    }
+  }
+
+  environment {
+    // AWS / ECR
+    AWS_REGION   = "us-west-2"
+    ECR_REGISTRY = "065915236794.dkr.ecr.us-west-2.amazonaws.com"
+    IMAGE_NAME   = "lesson-9-django-ecr"
+    IMAGE_TAG    = "v1.0.${BUILD_NUMBER}"
+
+    // Git
+    REPO_URL     = "https://github.com/LesiaUKR/my-microservice-project.git"
+    APP_BRANCH   = "lesson-4"     // Django + Dockerfile
+    CHART_BRANCH = "lesson-7"     // Helm chart гілка
+    CHART_PATH   = "lesson-5/charts/django-app"
+
+    COMMIT_EMAIL = "jenkins@localhost"
+    COMMIT_NAME  = "jenkins"
+  }
+
+  stages {
+
+    stage('Checkout app code (lesson-4)') {
+      steps {
+        container('git') {
+          sh '''
+            set -eux
+            rm -rf app-src
+            git clone --depth 1 --branch "$APP_BRANCH" "$REPO_URL" app-src
+            test -f app-src/django-docker-project/Dockerfile
+          '''
+        }
+      }
+    }
+
+    stage('Build & Push Docker Image') {
+      steps {
+        container('kaniko') {
+          // Прив’язуємо AWS Credentials (ID: aws-creds) до env-змінних
+          withCredentials([[
+            $class: 'AmazonWebServicesCredentialsBinding',
+            credentialsId: 'aws-creds',
+            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+          ]]) {
+            withEnv(["AWS_DEFAULT_REGION=${AWS_REGION}"]) {
+              sh '''
+                set -eux
+                /kaniko/executor \
+                  --context `pwd`/app-src/django-docker-project \
+                  --dockerfile `pwd`/app-src/django-docker-project/Dockerfile \
+                  --destination=$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
+                  --destination=$ECR_REGISTRY/$IMAGE_NAME:latest \
+                  --cache=true
+              '''
+            }
+          }
+        }
+      }
+    }
+
+    stage('Update Chart Tag in Git (lesson-7)') {
+      steps {
+        container('git') {
+          withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
+            sh '''
+              set -eux
+              rm -rf chart-repo
+              git clone --branch "$CHART_BRANCH" https://$GIT_USER:$GIT_PAT@github.com/LesiaUKR/my-microservice-project.git chart-repo
+              cd chart-repo/$CHART_PATH
+
+              # надійна заміна "tag:" (байдуже скільки пробілів)
+              sed -i "s/^[[:space:]]*tag:[[:space:]].*/  tag: $IMAGE_TAG/" values.yaml
+
+              git config user.email "$COMMIT_EMAIL"
+              git config user.name "$COMMIT_NAME"
+              git add values.yaml
+              git commit -m "Update image tag to $IMAGE_TAG" || echo "nothing to commit"
+              git push origin HEAD
+            '''
+          }
+        }
+      }
+    }
+  }
+}
+

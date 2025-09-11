@@ -1,0 +1,71 @@
+controller:
+  image:
+    registry: docker.io
+    repository: jenkins/jenkins
+    tag: lts-jdk17        
+    pullPolicy: IfNotPresent
+
+  overwritePlugins: true 
+  
+  # Resources
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  
+  javaOpts: "-Xmx2g -Djenkins.install.runSetupWizard=false"
+  serviceType: LoadBalancer
+  servicePort: 8080
+  
+  # Plugins to install
+  installPlugins:
+    - kubernetes:latest
+    - workflow-aggregator:latest
+    - git:latest
+    - configuration-as-code:latest
+    - pipeline-stage-view:latest
+    - docker-workflow:latest
+    - blueocean:latest
+    - github:latest
+    - aws-credentials:latest
+    
+  # JCasC Configuration
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: "Jenkins for CI/CD Pipeline"
+          
+        tool:
+          git:
+            installations:
+            - name: "Default"
+              home: "git"
+                    
+  admin:
+    username: "admin"
+    password: "your-secure-password-123"
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: "gp2"
+  size: "50Gi"
+
+# Service Account
+serviceAccount:
+  create: false
+  name: jenkins-admin
+
+# RBAC
+rbac:
+  create: true
+  readSecrets: true
+
+# Agent ВИМКНЕНИЙ
+agent:
+  enabled: false

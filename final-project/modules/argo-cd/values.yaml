@@ -1,0 +1,71 @@
+# Argo CD Configuration
+global:
+  logging:
+    level: info
+
+# Argo CD Server
+server:
+  service:
+    type: LoadBalancer
+    
+  ingress:
+    enabled: false
+    
+  config:
+    # Allow anonymous read access for easier setup
+    users.anonymous.enabled: "false"
+    
+  # Additional configuration
+  extraArgs:
+    - --insecure
+
+# Application Controller
+controller:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# Repository Server  
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+# Redis
+redis:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Application Set Controller
+applicationSet:
+  enabled: true
+
+# Notifications Controller  
+notifications:
+  enabled: false
+
+# RBAC Configuration
+configs:
+  params:
+    server.insecure: true
+    
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      g, admin, role:admin

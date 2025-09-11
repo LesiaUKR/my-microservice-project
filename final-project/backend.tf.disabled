@@ -1,0 +1,11 @@
+# backend.tf - Налаштування S3 backend для Terraform state
+
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket-name"
+    key            = "final-project/terraform.tfstate"
+    region         = "us-west-2"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
