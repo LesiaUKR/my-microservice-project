@@ -1,6 +1,6 @@
 # Default values for Argo CD Applications
 gitRepoUrl: "https://github.com/LesiaUKR/my-microservice-project.git"
-targetRevision: "lesson-7"
+targetRevision: "final-project"
 djangoAppNamespace: "django-app"
 
 # Applications to create
@@ -11,7 +11,7 @@ applications:
     source:
       repoURL: "{{ .Values.gitRepoUrl }}"
       targetRevision: "{{ .Values.targetRevision }}"
-      path: "lesson-5/charts/django-app"
+      path: "charts/django-app"
     destination:
       server: https://kubernetes.default.svc
       namespace: "{{ .Values.djangoAppNamespace }}"

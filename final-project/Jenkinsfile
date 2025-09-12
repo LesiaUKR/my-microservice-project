@@ -27,14 +27,14 @@ spec:
     // AWS / ECR
     AWS_REGION   = "us-west-2"
     ECR_REGISTRY = "065915236794.dkr.ecr.us-west-2.amazonaws.com"
-    IMAGE_NAME   = "lesson-9-django-ecr"
+    IMAGE_NAME   = "final-devops-django-ecr"
     IMAGE_TAG    = "v1.0.${BUILD_NUMBER}"
 
     // Git
     REPO_URL     = "https://github.com/LesiaUKR/my-microservice-project.git"
-    APP_BRANCH   = "lesson-4"     // Django + Dockerfile
-    CHART_BRANCH = "lesson-7"     // Helm chart гілка
-    CHART_PATH   = "lesson-5/charts/django-app"
+    APP_BRANCH   = "final-project"     // Django + Dockerfile
+    CHART_BRANCH = "final-project"     // Helm chart гілка
+    CHART_PATH   = "charts/django-app"
 
     COMMIT_EMAIL = "jenkins@localhost"
     COMMIT_NAME  = "jenkins"
