@@ -29,7 +29,7 @@ autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 6
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 30
 
 # Resource limits and requests
 resources:
