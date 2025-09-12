@@ -34,7 +34,7 @@ spec:
     REPO_URL     = "https://github.com/LesiaUKR/my-microservice-project.git"
     APP_BRANCH   = "final-project"     // Django + Dockerfile
     CHART_BRANCH = "final-project"     // Helm chart гілка
-    CHART_PATH   = "charts/django-app"
+    CHART_PATH   = "final-project/charts/django-app"
 
     COMMIT_EMAIL = "jenkins@localhost"
     COMMIT_NAME  = "jenkins"
@@ -42,14 +42,14 @@ spec:
 
   stages {
 
-    stage('Checkout app code (lesson-4)') {
+    stage('Checkout app code (final-project)') {
       steps {
         container('git') {
           sh '''
             set -eux
             rm -rf app-src
             git clone --depth 1 --branch "$APP_BRANCH" "$REPO_URL" app-src
-            test -f app-src/django-docker-project/Dockerfile
+            test -f app-src/final-project/django-app/Dockerfile
           '''
         }
       }
