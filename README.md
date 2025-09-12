@@ -1,193 +1,235 @@
+# Infrastructure Project on Terraform and Kubernetes (EKS)
 
-# RDS Terraform Module
+## Executive Summary
+This project demonstrates the deployment of a **Django application** in AWS EKS using a full DevOps toolchain.  
+It includes:  
+- Infrastructure provisioning with Terraform  
+- CI/CD automation with Jenkins  
+- GitOps synchronization with ArgoCD  
+- Autoscaling with Horizontal Pod Autoscaler (HPA)  
+- Monitoring with Prometheus & Grafana  
 
-Universal Terraform module for creating Amazon RDS databases. Supports both standard RDS instances and Aurora clusters through a single `use_aurora` flag.
+The workflow covers the entire lifecycle: code commit → build & push Docker image → Helm chart update → ArgoCD sync → Kubernetes deployment → monitoring and autoscaling.
+
+---
 
 ## Navigation
-
 [Back to Main Project](https://github.com/LesiaUKR/my-microservice-project/tree/main) - Main project overview and navigation to all lessons
 
-## Features
+## Table of Contents
+- [Executive Summary](#executive-summary)
+- [Navigation](#navigation)
+- [Project Overview](#project-overview)
+- [Architecture](#architecture)
+- [Modules](#modules)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#installation--setup)
+- [Using Terraform](#using-terraform)
+- [Deploy Django Application with Helm](#deploy-django-application-with-helm)
+- [Jenkins CI/CD Module](#jenkins-cicd-module)
+- [ArgoCD Module](#argocd-module)
+- [RDS Module](#rds-module)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Validation & Results](#validation--results)
 
-- **Universal Design**: Switch between RDS and Aurora with one variable
-- **Security**: Automatic Security Group and DB Subnet Group creation
-- **Monitoring**: Enhanced Monitoring and Performance Insights enabled
-- **Customizable**: Configurable parameters, backup policies, and scaling
-- **Production Ready**: Encryption, monitoring, and proper IAM roles
 
-## Quick Start
+---
 
-### Standard RDS Instance
+## Project Overview
+This project automates the deployment of AWS infrastructure for a microservices-based Django application using Terraform, Helm, and Kubernetes (EKS).  
+It includes:  
+- CI/CD with Jenkins  
+- Deployment of Django application with Helm  
+- Remote state storage in S3 with DynamoDB locking  
+- Horizontal Pod Autoscaler (HPA) for autoscaling  
 
-```hcl
-module "rds" {
-  source = "./modules/rds"
+---
 
-  name       = "my-app-db"
-  use_aurora = false
-
-  db_name  = "myapp"
-  username = "postgres"
-  password = "secure-password-123"
-
-  vpc_id             = "vpc-12345678"
-  subnet_private_ids = ["subnet-12345678", "subnet-87654321"]
-
-  tags = {
-    Environment = "production"
-    Project     = "my-app"
-  }
-}
+## Architecture
+```
+┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│   VPC    │  │   ECR    │  │   S3     │  │   EKS   │  │  Jenkins │  │  Argo CD │  │   RDS    │
+│  Module  │  │  Module  │  │ Backend  │  │ Module  │  │  Module  │  │  Module  │  │  Module  │
+└──────────┘  └──────────┘  └──────────┘  └─────────┘  └──────────┘  └──────────┘  └──────────┘
 ```
 
-### Aurora Cluster
+- VPC: Private/public subnets, NAT, IGW  
+- ECR: Docker repository for images  
+- S3/DynamoDB: Backend for Terraform state  
+- EKS: Kubernetes cluster for Django + Jenkins  
+- Jenkins: CI/CD pipelines, seed-job, GitHub integration  
+- ArgoCD: GitOps sync with Helm charts, automated app updates  
+- RDS: PostgreSQL or Aurora database  
 
-```hcl
-module "rds_aurora" {
-  source = "./modules/rds"
+---
 
-  name       = "my-app-aurora"
-  use_aurora = true
+## Modules
+- **VPC (modules/vpc):** Creates VPC, subnets, routing, NAT/IGW  
+- **ECR (modules/ecr):** Creates ECR repository for Docker images  
+- **S3-backend (modules/s3-backend):** S3 bucket + DynamoDB for Terraform state  
+- **EKS (modules/eks):** EKS cluster, node group, IAM roles  
+- **Jenkins (modules/jenkins):** Deploys Jenkins via Helm, seed-job, PVC  
+- **Django Helm Chart (charts/django-app):** Deploys Django app with HPA  
 
-  db_name  = "myapp"
-  username = "postgres"
-  password = "secure-password-123"
+---
 
-  aurora_replica_count = 2
-  instance_class       = "db.r6g.large"
+## Prerequisites
+- AWS account with admin privileges  
+- Terraform 1.0+  
+- AWS CLI  
+- kubectl  
+- Helm  
+- Docker (for image builds)  
 
-  vpc_id             = "vpc-12345678"
-  subnet_private_ids = ["subnet-12345678", "subnet-87654321"]
+---
 
-  tags = {
-    Environment = "production"
-    Project     = "my-app"
-  }
-}
+## Installation & Setup
+Clone the repository:
+```bash
+git clone <repo-url>
+cd final-project
 ```
 
-## Key Variables
+Configure AWS CLI:
+```bash
+aws configure
+```
 
-| Variable | Type | Description | Default |
-|----------|------|-------------|---------|
-| `use_aurora` | bool | Create Aurora cluster instead of RDS | `false` |
-| `name` | string | Database identifier | Required |
-| `db_name` | string | Database name | Required |
-| `username` | string | Master username | `postgres` |
-| `password` | string | Master password | Required |
-| `vpc_id` | string | VPC ID | Required |
-| `subnet_private_ids` | list(string) | Private subnet IDs | Required |
-| `instance_class` | string | Instance class | `db.t3.micro` |
-| `engine` | string | Database engine (RDS) | `postgres` |
-| `engine_cluster` | string | Database engine (Aurora) | `aurora-postgresql` |
-| `multi_az` | bool | Multi-AZ deployment (RDS only) | `false` |
-| `aurora_replica_count` | number | Aurora read replicas | `1` |
-| `backup_retention_period` | number | Backup retention days | `7` |
+Initialize Terraform:
+```bash
+terraform init
+```
 
-## Outputs
+---
 
-| Output | Description |
-|--------|-------------|
-| `rds_endpoint` | Database connection endpoint |
-| `rds_port` | Database port |
-| `database_name` | Database name |
-| `security_group_id` | Security group ID |
-| `connection_string` | Connection string template |
+## Using Terraform
+View plan:
+```bash
+terraform plan
+```
+
+Apply:
+```bash
+terraform apply
+```
+
+Destroy:
+```bash
+terraform destroy
+```
+
+---
+
+## Deploy Django Application with Helm
+Build and push Docker image:
+```bash
+docker build --platform linux/amd64 -t <ecr-repo>:<tag> .
+docker push <ecr-repo>:<tag>
+```
+
+Update `charts/django-app/values.yaml` with your image.  
+
+Deploy with Helm:
+```bash
+helm upgrade --install django-app ./charts/django-app
+```
+
+Get EXTERNAL-IP:
+```bash
+kubectl get svc -n django-app
+```
+
+Open in browser (port 80).  
+
+HPA scaling:  
+- Min pods: 2  
+- Max pods: 6  
+- CPU target: 70% (tested also with 30% under load)  
+
+---
+
+## Jenkins CI/CD Module
+- Deployed via Terraform (Helm chart).  
+- Storage: PVC backed by EBS (gp2 or ebs-sc).  
+- Seed-job: Creates pipeline from GitHub repo (Job DSL).  
+- GitHub PAT stored securely in Jenkins Credentials.  
+
+Access Jenkins:
+```bash
+kubectl get svc -n jenkins
+```
+Open `EXTERNAL-IP:8080` in browser.  
+
+Steps:  
+1. Login to Jenkins.  
+2. Run the seed-job → creates pipeline `django-app-pipeline`.  
+3. Pipeline stages:  
+   - Build & push Docker image to ECR  
+   - Commit updated `values.yaml` (image.tag)  
+   - ArgoCD syncs and updates deployment  
+
+---
+
+## ArgoCD Module
+Deployed via Terraform using Helm.  
+
+Access:
+```bash
+kubectl get svc -n argocd
+```
+Open `EXTERNAL-IP:8080` in browser.  
+
+Login:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+App must show **Healthy** & **Synced** in ArgoCD Dashboard.  
+
+---
+
+## RDS Module
+- Deployed via Terraform (Postgres RDS or Aurora).  
+
+Connection example:
+```bash
+psql --host=mydb.xxxxxxxxxxxx.us-east-1.rds.amazonaws.com      --port=5432      --username=mydbuser      --dbname=mydatabase
+```
+
+---
 
 ## Security
+- Use IAM roles instead of access keys  
+- Encrypt Terraform state in S3  
+- Do not store secrets in plain text  
+- Store GitHub PAT in Jenkins Credentials  
+- Monitor logs and resources  
 
-The module creates:
-- **Security Group**: Allows access only from specified CIDR blocks
-- **DB Subnet Group**: Uses private subnets for database placement
-- **Encryption**: Storage encryption enabled by default
-- **IAM Roles**: Proper monitoring roles with least privilege
+---
 
-## Configuration Examples
-
-### Changing Database Engine
-
-**PostgreSQL to MySQL:**
-```hcl
-# For standard RDS
-engine         = "mysql"
-engine_version = "8.0"
-parameter_group_family_rds = "mysql8.0"
-
-# For Aurora
-engine_cluster         = "aurora-mysql"
-engine_version_cluster = "8.0.mysql_aurora.3.04.0"
-parameter_group_family_aurora = "aurora-mysql8.0"
+## Troubleshooting
+- PVC Pending → Check StorageClass and AWS permissions  
+- Jenkins not starting → Check pod logs, PVC, resources  
+- LoadBalancer no EXTERNAL-IP → Wait or check cloud provider  
+- kubectl not connecting → Update kubeconfig via AWS CLI  
+- Helm release failed → Remove old release  
+```bash
+helm uninstall <release-name> -n <namespace>
 ```
 
-### Instance Class Selection
+---
 
-**Development (Low Cost):**
-- `db.t3.micro` - 1 vCPU, 1 GB RAM
-- `db.t3.small` - 1 vCPU, 2 GB RAM
+## Validation & Results
+- Jenkins pipeline completed successfully (build → push → update chart).  
+- ArgoCD shows application status as Healthy & Synced.  
+- HPA scaled replicas up under load and back down after.  
+- Grafana dashboards confirmed CPU/memory usage and autoscaling events.  
 
-**Production (High Performance):**
-- `db.r6g.large` - 2 vCPU, 16 GB RAM
-- `db.r6g.xlarge` - 4 vCPU, 32 GB RAM
-- `db.r6g.2xlarge` - 8 vCPU, 64 GB RAM
-
-**Example:**
-```hcl
-# Development
-instance_class = "db.t3.micro"
-
-# Production
-instance_class = "db.r6g.large"
-```
-
-### Storage Configuration
-
-```hcl
-# Small application
-allocated_storage = 20
-
-# Medium application  
-allocated_storage = 100
-
-# Large application
-allocated_storage = 500
-```
-
-### High Availability Setup
-
-```hcl
-# Production RDS with Multi-AZ
-use_aurora = false
-multi_az   = true
-instance_class = "db.r6g.large"
-backup_retention_period = 30
-
-# Production Aurora with replicas
-use_aurora = true
-aurora_replica_count = 3
-instance_class = "db.r6g.large"
-backup_retention_period = 30
-```
-
-## Switching Between RDS and Aurora
-
-Change the database type by modifying the `use_aurora` variable:
-
-```hcl
-# Standard RDS
-use_aurora = false
-
-# Aurora Cluster  
-use_aurora = true
-```
-
-When switching, Terraform will destroy the old database and create a new one. Ensure you have backups before switching in production.
-
-## Requirements
-
-- Terraform >= 1.0
-- AWS Provider >= 5.0
-- Existing VPC with private subnets
+---
 
 ## License
+This project was created for educational purposes.
 
-This module is open source and available under the MIT License.
+---
+
