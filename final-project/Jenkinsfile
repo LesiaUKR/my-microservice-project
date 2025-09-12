@@ -69,11 +69,11 @@ spec:
               sh '''
                 set -eux
                 /kaniko/executor \
-                  --context `pwd`/app-src/django-docker-project \
-                  --dockerfile `pwd`/app-src/django-docker-project/Dockerfile \
-                  --destination=$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-                  --destination=$ECR_REGISTRY/$IMAGE_NAME:latest \
-                  --cache=true
+              --context `pwd`/app-src/final-project/django-app \
+              --dockerfile `pwd`/app-src/final-project/django-app/Dockerfile \
+              --destination=$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
+              --destination=$ECR_REGISTRY/$IMAGE_NAME:latest \
+              --cache=true
               '''
             }
           }
