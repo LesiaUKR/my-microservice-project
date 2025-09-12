@@ -32,6 +32,7 @@ The workflow covers the entire lifecycle: code commit → build & push Docker im
 - [Security](#security)
 - [Troubleshooting](#troubleshooting)
 - [Validation & Results](#validation--results)
+- [Screeshots](#screenshots)
 
 
 ---
@@ -227,6 +228,21 @@ helm uninstall <release-name> -n <namespace>
 - Grafana dashboards confirmed CPU/memory usage and autoscaling events.  
 
 ---
+
+## Screenshots
+
+### Grafana HPA
+This screenshot shows the Horizontal Pod Autoscaler (HPA) metrics in Grafana, including CPU and memory utilization across pods.
+![Grafana HPA](final-project/assets/grafana-hpa.jpg)
+
+### Argo CD Application
+This screenshot shows the Argo CD dashboard with the `django-app` synced and healthy.
+![Argo CD Application](final-project/assets/argocd-app.jpg)
+
+### Jenkins Pipeline
+This screenshot shows the Jenkins pipeline stages for building, pushing the Docker image, and updating the Helm chart.
+![Jenkins Pipeline](final-project/assets/jenkins-pipeline.jpg)
+
 
 ## License
 This project was created for educational purposes.
