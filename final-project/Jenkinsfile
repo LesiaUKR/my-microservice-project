@@ -81,7 +81,7 @@ spec:
       }
     }
 
-    stage('Update Chart Tag in Git (lesson-7)') {
+    stage('Update Chart Tag in Git (final-project)') {
       steps {
         container('git') {
           withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
